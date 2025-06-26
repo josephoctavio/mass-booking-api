@@ -50,7 +50,7 @@ app.post('/api/bookings', async (req, res) => {
 
 // ===== 2. Paystack webhook endpoint =====
 app.post('/api/bookings/webhook/paystack', async (req, res) => {
-  // <— Inserted here:
+  // Debug: log every incoming webhook
   console.log('📬 Webhook hit with payload:', JSON.stringify(req.body).slice(0, 200));
 
   const event = req.body;
@@ -75,7 +75,10 @@ app.post('/api/bookings/webhook/paystack', async (req, res) => {
       if (booking) {
         console.log(`Booking ${booking._id} updated to paid.`);
 
-        // 2) Send confirmation email
+        // 2) Debug: log mailOptions summary
+        console.log('➤ About to send email to:', booking.email);
+
+        // 3) Send confirmation email
         const mailOptions = {
           from: `"St. Catherine Parish" <${process.env.GMAIL_USER}>`,
           to: booking.email,
@@ -99,10 +102,10 @@ St. Catherine Parish
         };
 
         try {
-          await transporter.sendMail(mailOptions);
-          console.log(`Confirmation email sent to ${booking.email}`);
+          const info = await transporter.sendMail(mailOptions);
+          console.log(`✅ Email sent: ${info.messageId}`);
         } catch (mailErr) {
-          console.error('Error sending email:', mailErr);
+          console.error('❌ Error sending email:', mailErr);
         }
       } else {
         console.log(`No booking found with paymentId ${reference}.`);
