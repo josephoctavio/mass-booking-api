@@ -75,38 +75,26 @@ app.post('/api/bookings/webhook/paystack', async (req, res) => {
       if (booking) {
         console.log(`Booking ${booking._id} updated to paid.`);
 
-        // 2) Debug: log mailOptions summary
-        console.log('➤ About to send email to:', booking.email);
+    // 2) DEBUG: Log and send confirmation email via Gmail
+    const mailOptions = {
+      from: `"St. Catherine Parish" <${process.env.GMAIL_USER}>`,
+      to:   booking.email,
+      subject: 'Your Mass Booking is Confirmed',
+      text: `Hello ${booking.name}, your booking is confirmed!`
+    };
 
-        // 3) Send confirmation email
-        const mailOptions = {
-          from: `"St. Catherine Parish" <${process.env.GMAIL_USER}>`,
-          to: booking.email,
-          subject: 'Your Mass Booking is Confirmed',
-          text: `
-Hi ${booking.name},
+    console.log('➤ [DEBUG] mailOptions:', {
+      from: mailOptions.from,
+      to:   mailOptions.to,
+      subject: mailOptions.subject
+    });
 
-We have received your payment of ₦${booking.amount} for your mass booking on ${new Date(booking.startDate).toLocaleDateString()}${booking.endDate ? ' to ' + new Date(booking.endDate).toLocaleDateString() : ''} at ${booking.time}.
-
-Thank you for your booking! We will notify you of any further updates.
-
-God bless,
-St. Catherine Parish
-          `,
-          html: `
-<p>Hi <strong>${booking.name}</strong>,</p>
-<p>We have received your payment of <strong>₦${booking.amount}</strong> for your mass booking on <strong>${new Date(booking.startDate).toLocaleDateString()}</strong>${booking.endDate ? ' to <strong>' + new Date(booking.endDate).toLocaleDateString() + '</strong>' : ''} at <strong>${booking.time}</strong>.</p>
-<p>Thank you for your booking! We will notify you of any further updates.</p>
-<p>God bless,<br/>St. Catherine Parish</p>
-          `,
-        };
-
-        try {
-          const info = await transporter.sendMail(mailOptions);
-          console.log(`✅ Email sent: ${info.messageId}`);
-        } catch (mailErr) {
-          console.error('❌ Error sending email:', mailErr);
-        }
+    try {
+      const info = await transporter.sendMail(mailOptions);
+      console.log(`✅ Email sent: ${info.messageId}`);
+    } catch (mailErr) {
+      console.error('❌ Error sending email:', mailErr);
+    }
       } else {
         console.log(`No booking found with paymentId ${reference}.`);
       }
