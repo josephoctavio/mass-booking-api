@@ -50,17 +50,8 @@ app.post('/api/bookings', async (req, res) => {
 
 // ===== 2. Paystack webhook endpoint =====
 app.post('/api/bookings/webhook/paystack', async (req, res) => {
-  // Debug: log every incoming webhook
-  console.log('📬 Webhook hit with payload:', JSON.stringify(req.body).slice(0, 200));
-
+  console.log('📬 Webhook hit with payload:', JSON.stringify(req.body).slice(0,200));
   const event = req.body;
-
-  // OPTIONAL: signature verification...
-  // const signature = req.headers['x-paystack-signature'];
-  // const expected  = crypto
-  //   .createHmac('sha512', process.env.PAYSTACK_SECRET_WEBHOOK)
-  //   .update(JSON.stringify(req.body)).digest('hex');
-  // if (signature !== expected) return res.status(400).send('Invalid signature');
 
   if (event.event === 'charge.success') {
     const reference = event.data.reference;
@@ -75,26 +66,25 @@ app.post('/api/bookings/webhook/paystack', async (req, res) => {
       if (booking) {
         console.log(`Booking ${booking._id} updated to paid.`);
 
-    // 2) DEBUG: Log and send confirmation email via Gmail
-    const mailOptions = {
-      from: `"St. Catherine Parish" <${process.env.GMAIL_USER}>`,
-      to:   booking.email,
-      subject: 'Your Mass Booking is Confirmed',
-      text: `Hello ${booking.name}, your booking is confirmed!`
-    };
+        // DEBUG: log mailOptions then attempt send
+        const mailOptions = {
+          from: `"St. Catherine Parish" <${process.env.GMAIL_USER}>`,
+          to:   booking.email,
+          subject: 'Your Mass Booking is Confirmed',
+          text: `Hello ${booking.name}, your booking is confirmed!`
+        };
+        console.log('➤ [DEBUG] mailOptions:', {
+          from: mailOptions.from,
+          to:   mailOptions.to,
+          subject: mailOptions.subject
+        });
 
-    console.log('➤ [DEBUG] mailOptions:', {
-      from: mailOptions.from,
-      to:   mailOptions.to,
-      subject: mailOptions.subject
-    });
-
-    try {
-      const info = await transporter.sendMail(mailOptions);
-      console.log(`✅ Email sent: ${info.messageId}`);
-    } catch (mailErr) {
-      console.error('❌ Error sending email:', mailErr);
-    }
+        try {
+          const info = await transporter.sendMail(mailOptions);
+          console.log(`✅ Email sent: ${info.messageId}`);
+        } catch (mailErr) {
+          console.error('❌ Error sending email:', mailErr);
+        }
       } else {
         console.log(`No booking found with paymentId ${reference}.`);
       }
@@ -104,8 +94,9 @@ app.post('/api/bookings/webhook/paystack', async (req, res) => {
   }
 
   // Acknowledge receipt
-  return res.status(200).send('Webhook received');
+  res.status(200).send('Webhook received');
 });
+
 
 // ===== 3. List bookings =====
 app.get('/api/bookings', async (req, res) => {
